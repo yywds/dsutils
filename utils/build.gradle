@@ -49,4 +49,7 @@ dependencies {
     implementation 'com.zxn.imagepicker:zImagePicker:1.0.2'//上传图片
     implementation 'com.gyf.immersionbar:immersionbar:3.0.0-beta05'//沉浸式状态栏
     implementation 'com.youth.banner:banner:1.4.10'//banner横幅
+    implementation 'cn.jzvd:jiaozivideoplayer:7.4.2' //饺子播放器
+    implementation 'com.lxj:xpopup:2.0.8'  //xpopup
+    implementation 'de.hdodenhof:circleimageview:3.1.0'//圆形头像框架
 }

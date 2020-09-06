@@ -3,22 +3,31 @@ package com.example.utils;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -33,6 +42,8 @@ import com.lcw.library.imagepicker.ImagePicker;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
+import com.lxj.xpopup.XPopup;
+import com.lxj.xpopup.interfaces.OnConfirmListener;
 import com.youth.banner.Banner;
 import com.youth.banner.BannerConfig;
 import com.youth.banner.Transformer;
@@ -41,11 +52,15 @@ import com.youth.banner.loader.ImageLoader;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.hdodenhof.circleimageview.CircleImageView;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
@@ -56,6 +71,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+import static android.view.animation.Animation.INFINITE;
 import static com.kongzue.dialog.v2.DialogSettings.STYLE_MATERIAL;
 import static com.kongzue.dialog.v2.DialogSettings.THEME_LIGHT;
 import static com.kongzue.dialog.v2.Notification.TYPE_NORMAL;
@@ -314,7 +330,7 @@ public class CommonUtils {
      * 仿微信消息通知
      * @param context
      */
-    public static void NWeixin(Context context,int iconResId,String text){
+    public static void FanWeixin(Context context,int iconResId,String text){
         Notification.show(context, 1, context.getResources().getDrawable(iconResId), context.getString(R.string.app_name), text, Notification.SHOW_TIME_LONG,TYPE_NORMAL );
     }
 
@@ -621,5 +637,296 @@ public class CommonUtils {
         return call;
     }
 
+
+    /**
+     * 选择图片
+     */
+    public static void SelectImage(Activity activity, int code) {
+        ImagePicker.getInstance()
+                .setTitle("选择图片")//设置标题
+                .showCamera(true)//设置是否显示拍照按钮
+                .showImage(true)//设置是否展示图片
+                .showVideo(false)//设置是否展示视频
+                .setSingleType(true)//设置图片视频不能同时选择
+                .setMaxCount(1)//设置最大选择图片数目(默认为1，单选)
+//                        .setImagePaths(mImageList)//保存上一次选择图片的状态，如果不需要可以忽略
+                .setImageLoader(new GlideLoader())//设置自定义图片加载器
+                .start(activity, code);
+    }
+
+    ;
+
+    /**
+     * 选择视频
+     */
+    public static void SelectVideo(Activity activity, int code) {
+        ImagePicker.getInstance()
+                .setTitle("选择视频")//设置标题
+                .showCamera(false)//设置是否显示拍照按钮
+                .showImage(false)//设置是否展示图片
+                .showVideo(true)//设置是否展示视频
+                .setSingleType(true)//设置图片视频不能同时选择
+                .setMaxCount(1)//设置最大选择图片数目(默认为1，单选)
+//                        .setImagePaths(mImageList)//保存上一次选择图片的状态，如果不需要可以忽略
+                .setImageLoader(new GlideLoader())//设置自定义图片加载器
+                .start(activity, code);
+    }
+
+
+    /**
+     * 获取当前时间
+     *
+     * @return
+     */
+    public static String CurrentTimeWenzi() {
+        @SuppressLint("SimpleDateFormat") SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy年MM月dd日");
+        //获取当前时间
+        Date date = new Date(System.currentTimeMillis());
+        String time = simpleDateFormat.format(date);
+        return time;
+    }
+
+    /**
+     * 操作成功后2秒返回首页
+     */
+    public static void PublishSuccess(final Activity activity) {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                activity.finish();
+            }
+        }, 2000);
+    }
+
+    /**
+     * 1秒后跳转
+     */
+    public static void Delay1s(final Context context, final Activity activity, final Class<?> cls) {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                IntentToPage(context, cls);
+                activity.finish();
+            }
+        }, 1000);
+    }
+
+    /**
+     * 隐藏状态栏和导航栏、标题栏
+     */
+    public static void HideBarAll(Activity activity) {
+        ImmersionBar.with(activity).hideBar(BarHide.FLAG_HIDE_BAR);
+    }
+
+    /**
+     * 3秒后销毁页面
+     */
+    public static void Delay3s(final Activity activity) {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                activity.finish();
+            }
+        }, 3000);
+    }
+
+    /**
+     * 手势判断
+     */
+    public static void GestureDetectorAction(View view, final GestureDetector gestureDetector) {
+        //布局监听
+        view.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                gestureDetector.onTouchEvent(event);
+                return true; // 注：返回true才能完整接收触摸事件
+            }
+        });
+    }
+
+    /**
+     * 再按一次退出提醒
+     */
+    public static void QuitShowToHome(Activity activity) {
+        if ((System.currentTimeMillis() - exitTime) > 2000) {//判断此次按键于上一次按键的时间差是否>2s
+            Toast.makeText(activity, "再按一次退出应用", Toast.LENGTH_SHORT).show();
+            exitTime = System.currentTimeMillis();//纪录这次按键的时间，下次有用
+            return;//时间差大于2s，退出返回事件
+        }
+        activity.finishAffinity();//时间差小于2s，销毁
+    }
+
+    /**
+     * OKhttp封装
+     */
+    public static void OKPost(HashMap<String, String> param, String url, Callback callback) {
+        //创建OkHttpClient请求对象
+        OkHttpClient okHttpClient = new OkHttpClient();
+        FormBody.Builder formBody = new FormBody.Builder();
+        //封装请求的参数
+        if (!param.isEmpty()) {
+            //遍历集合
+            for (Map.Entry<String, String> entry : param.entrySet()) {
+                formBody.add(entry.getKey(), entry.getValue());
+            }
+        }
+        RequestBody form = formBody.build();
+        Request.Builder builder = new Request.Builder();
+        Request request = builder.post(form)
+                .url(url)
+                .build();
+        okHttpClient.newCall(request).enqueue(callback);
+    }
+
+
+    /**
+     * 有跳转的确定对话框
+     */
+    public static void ConfirmShow(final Context context, final Activity activity, final Class<?> clss, String text) {
+        new XPopup.Builder(context).asConfirm("", text,
+                new OnConfirmListener() {
+                    @Override
+                    public void onConfirm() {
+                        activity.startActivity(new Intent(context, clss));
+                        activity.finishAffinity();
+                    }
+                })
+                .show();
+    }
+
+    /**
+     * 无跳转的确定对话框
+     */
+    public static void NoneConfirmShow(Context context, String text, final Activity activity) {
+        new XPopup.Builder(context).asConfirm("", text,
+                new OnConfirmListener() {
+                    @Override
+                    public void onConfirm() {
+                        activity.finish();
+                    }
+                })
+                .show();
+    }
+
+    /**
+     * 默认的确定对话框
+     */
+    public static void DeafultConfirmShow(final Context context, String text, Activity activity, final String text2) {
+        new XPopup.Builder(context).asConfirm("", text,
+                new OnConfirmListener() {
+                    @Override
+                    public void onConfirm() {
+                        DialogShow(context, text2);
+                    }
+                })
+                .show();
+    }
+
+    /**
+     * 循环旋转动画
+     */
+    public static void setRotateAnim(CircleImageView circleImageView) {
+        RotateAnimation rotateAnimation = new RotateAnimation(0, 359,
+                Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+        rotateAnimation.setRepeatCount(INFINITE);
+        rotateAnimation.setDuration(20000);
+        rotateAnimation.setInterpolator(new LinearInterpolator());
+        circleImageView.startAnimation(rotateAnimation);
+    }
+
+    /**
+     * 倒计时
+     */
+    public static void initCountDownTimer(final TextView tv_time, final Activity activity, final Context context, final Class<?> cls) {
+        CountDownTimer timer = new CountDownTimer(4000, 1000) {
+            @SuppressLint("SetTextI18n")
+            @Override
+            public void onTick(long l) {
+                tv_time.setText(l / 1000 + "S");
+            }
+
+            @Override
+            public void onFinish() {
+                IntentToPage(context, cls);//倒计时结束后跳转
+                activity.finish();
+            }
+        }.start();
+    }
+
+    /**
+     * 时间提示
+     */
+    public static void initCalendarTime(final Context context, final String text) {
+        Calendar calendar = Calendar.getInstance();
+        int hour = calendar.get(Calendar.HOUR);
+        int minute = calendar.get(Calendar.MINUTE);
+        TimePickerDialog timePickerDialog = new TimePickerDialog(context, new TimePickerDialog.OnTimeSetListener() {
+            @Override
+            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                String h;
+                String m;
+                h = String.valueOf(hourOfDay);
+                m = String.valueOf(minute);
+                if (hourOfDay < 10) {
+                    h = "0" + hourOfDay;
+                }
+                if (minute < 10) {
+                    m = "0" + hourOfDay;
+                }
+                DialogShow(context, h + ":" + m + text);
+            }
+        }, hour, minute, true);
+        timePickerDialog.show();
+    }
+
+    /**
+     * long类型转字符时间
+     */
+    public static String longToDate(long l){
+        Date date = new Date(l);
+        @SuppressLint("SimpleDateFormat") SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
+        return sd.format(date);
+    }
+
+    /**
+     * 设置导航栏颜色
+     */
+    public static void setSystemBarColor(Activity activity,int color) {
+        ImmersionBar.with(activity).navigationBarColor(color);
+    }
+
+    /**
+     * 底部tab切换颜色变化4
+     */
+    @SuppressLint("UseCompatLoadingForDrawables")
+    public static void setCurPoint4(Activity activity, ImageView ivone, ImageView ivtwo, ImageView ivthree, ImageView ivfour,
+                                   int one, int two, int three, int four){
+        ivone.setImageDrawable(activity.getResources().getDrawable(one));
+        ivtwo.setImageDrawable(activity.getResources().getDrawable(two));
+        ivthree.setImageDrawable(activity.getResources().getDrawable(three));
+        ivfour.setImageDrawable(activity.getResources().getDrawable(four));
+    }
+
+    /**
+     * 底部tab切换颜色变化3
+     */
+    @SuppressLint("UseCompatLoadingForDrawables")
+    public static void setCurPoint3(Activity activity, ImageView ivone, ImageView ivtwo, ImageView ivthree,
+                                    int one, int two, int three){
+        ivone.setImageDrawable(activity.getResources().getDrawable(one));
+        ivtwo.setImageDrawable(activity.getResources().getDrawable(two));
+        ivthree.setImageDrawable(activity.getResources().getDrawable(three));
+    }
+
+    /**
+     * 底部tab切换颜色变化3
+     */
+    @SuppressLint("UseCompatLoadingForDrawables")
+    public static void setTextCurPoint3(Activity activity, ImageView ivone, ImageView ivtwo, ImageView ivthree,
+                                    int one, int two, int three){
+        ivone.setImageDrawable(activity.getResources().getDrawable(one));
+        ivtwo.setImageDrawable(activity.getResources().getDrawable(two));
+        ivthree.setImageDrawable(activity.getResources().getDrawable(three));
+    }
 
 }
