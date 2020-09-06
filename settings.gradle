@@ -1,0 +1,3 @@
+rootProject.name='YywUtils'
+include ':app'
+include ':utils'
